@@ -34,11 +34,11 @@ contract Project{
         data.amountOfTokens = _amountOfTokens;
         projectAddress.push(wallet);
     }
-    
+
     function setAmountOfTokens(uint256 newAmount) external {
         amountOfTokens = newAmount;
     }
-    
+
     function getProjectInfo() external view returns(string memory, string memory, uint256){
         return(projectData[wallet].name, projectData[wallet].description, projectData[wallet].amountOfTokens);
     }
@@ -54,7 +54,7 @@ contract Project{
     function getDescription() public view returns(string memory){
         return description;
     }
-    
+
     function getBalance() public view returns(uint256){
         return address(this).balance;
     }

@@ -11,5 +11,3 @@ module.exports = function(deployer) {
 module.exports = function(deployer) {
   deployer.deploy(Market);
 };
-
-// Market.deployed().then((instance)=>{app = instance;Market.numberFormat = "String";})
