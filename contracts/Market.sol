@@ -1,60 +1,56 @@
 pragma solidity >=0.4.21 <0.6.0;
 import "./Project.sol";
-
+import "openzeppelin-solidity/contracts/crowdsale/Crowdsale.sol";
 
 contract Market{
-    Project[] projectMarket;
-    mapping (address => Project) public projects;
-    mapping(address => uint256) public balances;
-    address payable wallet = msg.sender;
 
-    function createProject(
-        string memory projectName,
-        string memory projectDescription,
-        uint256 amountOfTokens
-        ) public{
-            projects[msg.sender] = new Project(projectName,projectDescription,amountOfTokens);
+    using SafeMath for uint256;
+    mapping(string => Proj) public projectsMarket;
+
+    function createProject(string memory _name,string memory _description,uint8 _decimals, uint _price)public{
+        require(_decimals>0,"Project should have at least 1 token");
+        require(_decimals>0,"Price cannot be 0");
+        Proj project = new Proj(_name, _description, _decimals, _price);
+        projectsMarket[_name] = project;
     }
 
-    function getProjectInfo(address key) public view returns(string memory, string memory,string memory,string memory,string memory, uint256){
-      return (
-          "Project name: ", projects[key].getName(),
-          "Project description: ", projects[key].getDescription(),
-          "Amount of tokens: ",projects[key].amountOfTokens()
-          );
+    function getProjectInfo(string memory _name)
+    public view returns(
+        string memory,
+        string memory,
+        string memory,
+        uint256,
+        string memory,
+        uint256){
+        return (
+            projectsMarket[_name].name(),
+            projectsMarket[_name].symbol(),
+            "Project price: ",
+            getProjectPrice(_name),
+            "Amount of shares: ",
+            getAmountOfShares(_name)
+            );
     }
 
-    function buyToken(address key,uint256 amount) public payable{
-        require(amount > 0,"You can't buy 0 tokens");
-        uint256 tokenPrice = projects[key].getTokenPrice();
-        uint256 amountOfTokens = getAmountOfTokens(key);
-        require(wallet.balance >= tokenPrice * amount,"Balance has to be greater or equal to token price");
-        balances[wallet] += amount;
-        wallet.send(tokenPrice * amount);
-        amountOfTokens -= amount;
-        setAmountOfTokens(key,amountOfTokens);
+    function getAmountOfShares(string memory _name)public view returns(uint256){
+        return projectsMarket[_name].decimals();
     }
 
-    function sellToken(address key, uint256 amount) external payable{
-        require(amount > 0,"You can't sell 0 tokens");
-        uint256 tokenPrice = projects[key].getTokenPrice();
-        uint256 amountOfTokens = getAmountOfTokens(key);
-        balances[wallet] -= amount;
-        wallet.send(tokenPrice * amount);
-        amountOfTokens += amount;
-        setAmountOfTokens(key,amountOfTokens);
+    function getProjectPrice(string memory _name)public view returns(uint256){
+        return projectsMarket[_name].price();
     }
-    
-    function getAmountOfTokens(address key) public view returns(uint256){
-       return projects[key].amountOfTokens();
-    }
-   
-   function setAmountOfTokens(address key, uint256 amount) public {
-       projects[key].setAmountOfTokens(amount);
-   }
-   
-   function getTokenPrice(address key) public view returns(uint256){
-       return projects[key].getTokenPrice();
-   }
 
+    function getBalance(string memory _name)public view returns(uint256){
+        return projectsMarket[_name].totalSupply();
+    }
+
+    function sellTokens(string memory _name,address buyer,uint256 amount)public{
+        require(amount>0,'Amount should be greater than 0');
+        projectsMarket[_name].transfer(buyer, getProjectPrice(_name) * amount);
+    }
+
+    function buyTokens(string memory _name, address seller, uint256 amount)public{
+        require(amount>0,'Amount should be greater than 0');
+        projectsMarket[_name].transferFrom(seller, tx.origin, amount);
+    }
 }
