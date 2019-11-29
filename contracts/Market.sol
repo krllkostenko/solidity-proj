@@ -3,17 +3,14 @@ import "./Project.sol";
 import "openzeppelin-solidity/contracts/crowdsale/Crowdsale.sol";
 
 contract Market{
-
     using SafeMath for uint256;
     mapping(string => Proj) public projectsMarket;
 
     function createProject(string memory _name,string memory _description,uint8 _decimals, uint _price)public{
-        require(_decimals>0,"Project should have at least 1 token");
-        require(_decimals>0,"Price cannot be 0");
         Proj project = new Proj(_name, _description, _decimals, _price);
         projectsMarket[_name] = project;
     }
-
+    
     function getProjectInfo(string memory _name)
     public view returns(
         string memory,
@@ -31,26 +28,38 @@ contract Market{
             getAmountOfShares(_name)
             );
     }
-
+    
     function getAmountOfShares(string memory _name)public view returns(uint256){
-        return projectsMarket[_name].decimals();
+        return projectsMarket[_name].amountOfShares();
     }
-
+    
     function getProjectPrice(string memory _name)public view returns(uint256){
         return projectsMarket[_name].price();
     }
-
+    
     function getBalance(string memory _name)public view returns(uint256){
         return projectsMarket[_name].totalSupply();
     }
-
+    
     function sellTokens(string memory _name,address buyer,uint256 amount)public{
         require(amount>0,'Amount should be greater than 0');
-        projectsMarket[_name].transfer(buyer, getProjectPrice(_name) * amount);
+        
+        uint256 projectPrice = getProjectPrice(_name);
+        uint256 projectsShares = getAmountOfShares(_name);
+        uint256 newAmountOfShares = projectsShares + amount;
+        
+        projectsMarket[_name].transferFrom(buyer, tx.origin, projectPrice);
+        projectsMarket[_name].setAmountOfShares(newAmountOfShares);
     }
 
     function buyTokens(string memory _name, address seller, uint256 amount)public{
         require(amount>0,'Amount should be greater than 0');
-        projectsMarket[_name].transferFrom(seller, tx.origin, amount);
+        
+        uint256 projectPrice = getProjectPrice(_name);
+        uint256 projectsShares = getAmountOfShares(_name);
+        uint256 newAmountOfShares = projectsShares - amount;
+        
+        projectsMarket[_name].transfer(seller, projectPrice * amount);
+        projectsMarket[_name].setAmountOfShares(newAmountOfShares);
     }
 }
