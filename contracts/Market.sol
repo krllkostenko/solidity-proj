@@ -31,7 +31,7 @@ contract Market{
             uint256
         )
     {
-        return (
+        return(
             projectsMarket[_name].name(),
             projectsMarket[_name].symbol(),
             "Project price: ",
